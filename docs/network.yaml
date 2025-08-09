@@ -1,0 +1,24 @@
+# Network plan (edit with your real values)
+# Lab address space: 192.168.4.0/22  # example
+subnets:
+  - name: "LAN"
+    cidr: "192.168.4.0/22"
+    gateway: "192.168.4.1"   # eero router
+    notes: "Home LAN"
+
+reservations:
+  - hostname: "srv-media"
+    ip: "192.168.4."
+    mac_eth: "00:00:00:00:00:00"
+    mac_wifi: "00:00:00:00:00:00"
+    notes: "Ubuntu Server (media/automation)"
+  - hostname: "lab-proxmox"
+    ip: "192.168.4."
+    mac_eth: "00:00:00:00:00:00"
+    mac_wifi: "00:00:00:00:00:00"
+    notes: "Proxmox VE host"
+
+dns:
+  primary: "1.1.1.1"
+  secondary: "8.8.8.8"
+  future_pi_hole: "192.168.4."  # planned LXC

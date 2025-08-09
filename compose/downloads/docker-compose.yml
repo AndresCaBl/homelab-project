@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - .env
+    volumes:
+      - /srv/config/gluetun:/gluetun
+    ports:
+      - "8080:8080"   # qBittorrent Web UI via VPN
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    env_file:
+      - .env
+    volumes:
+      - /srv/downloads:/downloads
+      - /srv/config/qbittorrent:/config
+    restart: unless-stopped
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    env_file:
+      - .env
+    volumes:
+      - /srv/config/jackett:/config
+    restart: unless-stopped
+
+# LAN access rules and completed download handling will be added later.

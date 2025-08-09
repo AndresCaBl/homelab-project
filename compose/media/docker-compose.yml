@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    env_file:
+      - .env
+    volumes:
+      - /srv/media:/media
+      - /srv/config/plex:/config
+    network_mode: bridge
+    ports:
+      - "32400:32400"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "pgrep -f Plex || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+# Create a matching .env (based on .env.example) before running.
