@@ -40,3 +40,7 @@ ehthumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Logs and local artifacts
+*.log
+logs/
