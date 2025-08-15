@@ -1,0 +1,31 @@
+hosts:
+  - hostname: srv-media
+    ip: 192.168.4.90
+    mac_eth: "00:2B:67:C5:B8:75"
+    mac_wifi: "C8:58:C0:E8:BF:CA"
+    os: Ubuntu Server 22.04.4 LTS
+    role: Media & Automation
+    ssh_key: homelab_ed25519 installed
+    packages:
+      - vim
+      - curl
+      - htop
+      - net-tools
+
+  - hostname: lab-proxmox
+    ip: 192.168.4.91
+    mac_eth: "00:2B:67:C5:BC:15"
+    mac_wifi: "C8:58:C0:E9:2E:C4"
+    os: Proxmox VE 8.x
+    role: VM & LXC Host
+    ssh_key: homelab_ed25519 installed
+    packages: []
+
+  - hostname: old-dell
+    ip: 192.168.4.92
+    mac_eth: "UNKNOWN"
+    mac_wifi: "192.168.4.32"
+    os: Ubuntu Desktop 24.04
+    role: Legacy Media Server / Migration Source
+    ssh_key: homelab_ed25519 installed
+    packages: []
