@@ -75,3 +75,11 @@
   - Disable SSH password authentication after key verification.  
 - **Status:** Approved
 - **Consequences:** Consistent login experience across lab, improved security, supports automation workflows.
+
+## ADR-0011: Remote Access via Tailscale
+- **Status:** Approved
+- **Context:** Secure access to homelab services (Ubuntu server and Proxmox) from anywhere without router port forwarding.
+- **Decision:** Use Tailscale for mesh VPN connectivity. Enable MagicDNS to allow name-based access (`srv-media`, `lab-proxmox`) instead of Tailscale IPs. Exit Node support is optional, not enabled by default.
+- **Consequences:** 
+  - Devices remain accessible regardless of LAN IP changes.
+  - Simplified remote management, similar to Azure Bastion/VPN Gateway.
