@@ -28,3 +28,17 @@
 - Verify name-based access:
   - SSH: `ssh andres@srv-media`
   - Proxmox UI: `https://lab-proxmox.tail401c13.ts.net:8006`
+
+  ## Phase 4 – Storage Layout & Library Migration
+- Mount external USB drives by UUID:
+  - `/srv/media/movies` → USB Drive 1 (ext4, UUID mounted with `noatime`)
+  - `/srv/media/tv` → USB Drive 2 (ext4, UUID mounted with `noatime`)
+- Verify mounts with `findmnt` and confirm `noatime` option active.
+- Migrate media libraries from old server using `rsync` for fast LAN transfer.
+- Verify transfer with `du -sh` and `find . | wc -l`.
+- Normalize permissions:
+  - Owner: `andres:andres`
+  - Directories: `755`
+  - Files: `644`
+- Perform initial tidy-up:
+

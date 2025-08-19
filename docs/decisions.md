@@ -83,3 +83,16 @@
 - **Consequences:** 
   - Devices remain accessible regardless of LAN IP changes.
   - Simplified remote management, similar to Azure Bastion/VPN Gateway.
+
+## ADR-0012: Storage Layout & Library Migration
+- **Status:** Approved
+- **Context:** Media libraries from old server needed migration into new, migration-friendly `/srv` structure.
+- **Decision:**  
+  - Use `/srv/media/movies` and `/srv/media/tv` as mount points for external drives, mounted by UUID with `noatime`.  
+  - Migrate existing content via `rsync`.  
+  - Normalize permissions (owner: andres, dirs 755, files 644).  
+  - Perform initial tidy-up but defer renaming/duplicates handling to Radarr/Sonarr.  
+- **Consequences:**  
+  - Storage layout is consistent and portable.  
+  - Future migrations only require mounting drives at same `/srv` paths.  
+  - Old server remains online temporarily as fallback.
