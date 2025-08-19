@@ -40,5 +40,30 @@
   - Owner: `andres:andres`
   - Directories: `755`
   - Files: `644`
-- Perform initial tidy-up:
+- Perform initial tidy-up
+- Final folder tree after mounting USB drives and cache drive
+    /srv/
+    ├── backup
+    │   ├── configs
+    │   └── db_dumps
+    ├── bin
+    ├── cache
+    │   └── downloads
+    │       ├── incomplete
+    │       ├── seeding
+    │       └── watch
+    ├── compose
+    │   ├── download-stack
+    │   └── media-stack
+    ├── config
+    │   ├── bazarr
+    │   ├── gluetun
+    │   ├── jellyfin
+    │   ├── overseerr
+    │   ├── prowlarr
+    │   ├── radarr
+    │   └── sonarr
+    └── media
+        ├── movies
+        └── tv
 

@@ -96,3 +96,23 @@
   - Storage layout is consistent and portable.  
   - Future migrations only require mounting drives at same `/srv` paths.  
   - Old server remains online temporarily as fallback.
+
+  ## ADR-013: Unified /srv Folder Structure with SSD Cache
+
+- **Status:** Approved  
+- **Context:**  
+  To support migration-friendly and performance-optimized media management, we need a consistent and predictable `/srv` tree.  
+  The SSD cache drive handles all torrent activity, while USB HDDs provide long-term storage for movies and TV shows.  
+  This ensures fast I/O for downloads/seeding and clean separation of persistent data.  
+
+- **Decision:**  
+  - Use `/srv/cache/downloads/{incomplete,seeding,watch}` on the SSD cache drive.  
+  - Use `/srv/media/movies` and `/srv/media/tv` on USB drives (mounted by UUID with `noatime`).  
+  - Keep service configs under `/srv/config/<service>`.  
+  - Keep Compose projects under `/srv/compose/<stack>`.  
+  - Keep backups under `/srv/backup/{configs,db_dumps}`.  
+
+- **Consequences:**  
+  - Docker containers (qBittorrent, Sonarr, Radarr, etc.) will rely on a consistent path layout.  
+  - Migration to other hosts (NUC, UnRAID) is simplified by re-using `/srv` layout.  
+  - Cache SSD prevents excessive writes on USB HDDs, improving performance and longevity.  
