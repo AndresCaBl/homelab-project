@@ -10,3 +10,7 @@ backup/restic-repo/
 # misc
 .DS_Store
 Thumbs.db
+.env
+/srv/config
+/srv/backup
+/srv/cache

@@ -50,7 +50,7 @@
     ├── cache
     │   └── downloads
     │       ├── incomplete
-    │       ├── seeding
+    │       ├── complete
     │       └── watch
     ├── compose
     │   ├── download-stack
