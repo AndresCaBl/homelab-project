@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add: [NET_ADMIN]
+    devices: ["/dev/net/tun:/dev/net/tun"]
+    env_file: [.env]
+    ports: ["8080:8080", "9696:9696"]
+    volumes: ["/srv/config/gluetun:/gluetun"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- https://ipinfo.io || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:4.6.7
+    network_mode: "service:gluetun"
+    depends_on: [gluetun]
+    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}", "WEBUI_PORT=8080"]
+    volumes:
+      - /srv/config/qbittorrent:/config
+      - /srv/cache/downloads/incomplete:/downloads/incomplete
+      - /srv/cache/downloads/seeding:/downloads/seeding
+      - /srv/cache/downloads/complete:/downloads/complete
+      - /srv/cache/downloads/watch:/downloads/watch
+    restart: unless-stopped
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:1.28.2
+    network_mode: "service:gluetun"
+    depends_on: [gluetun]
+    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}"]
+    volumes: ["/srv/config/prowlarr:/config"]
+    restart: unless-stopped

@@ -1,46 +1,12 @@
-# OS
+# secrets & runtime
+*.env
+config/**/secrets*.json
+config/**/auth.json
+config/**/api_keys*
+backup/*.tar
+backup/*.tgz
+backup/*.zip
+backup/restic-repo/
+# misc
 .DS_Store
 Thumbs.db
-*.swp
-*.swo
-
-# Node/NPM (if used later)
-node_modules/
-
-# Python (if used later)
-__pycache__/
-.pytest_cache/
-*.pyc
-
-# Docker/Compose artifacts
-*.env
-.env
-.env.*
-docker-data/
-volumes/
-
-# Backups/archives
-backup/*.tar*
-backup/*.zip
-backup/*.gz
-backup/*.bz2
-
-# Draw.io temp/export
-docs/*.tmp
-docs/*.bak
-docs/*.bkp
-docs/*.dtmp
-docs/*.drawio.bkp
-
-# OS-specific metadata
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-
-# IDEs
-.vscode/
-.idea/
-
-# Logs and local artifacts
-*.log
-logs/

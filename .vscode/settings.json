@@ -1,0 +1,16 @@
+{
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "yaml.format.singleQuote": true,
+  "yaml.format.printWidth": 100,
+  "yaml.validate": true,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": [
+      "compose/**/docker-compose.yml",
+      "compose/**/docker-compose.yaml"
+    ]
+  },
+  "editor.rulers": [100]
+}
