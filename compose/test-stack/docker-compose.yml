@@ -1,0 +1,17 @@
+services:
+  writer:
+    image: alpine:3.20
+    container_name: test-writer
+    user: "${PUID}:${PGID}"
+    environment:
+      - TZ=${TZ}
+    # Use an array form for command (YAML-safe)
+    command: ["sh","-c","id; uname -a; date > /work/hello.txt; echo Wrote; cat /work/hello.txt; sleep 5"]
+    volumes:
+      - ${CACHE_ROOT}/tmp:/work
+    networks:
+      - homelab
+
+networks:
+  homelab:
+    external: true
