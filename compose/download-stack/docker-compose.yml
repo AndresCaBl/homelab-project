@@ -21,6 +21,8 @@ services:
       - DOT=on                 # DNS-over-TLS inside the tunnel
       - VPN_PORT_FORWARDING=on
       - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{PORTS}}}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
+      - HTTP_CONTROL_SERVER=on
+      - HTTP_CONTROL_SERVER_ADDRESS=:8000
 
     volumes:
       - /srv/config/gluetun:/gluetun
@@ -33,8 +35,9 @@ services:
       retries: 5
     ports:
       - "${QBITTORRENT_WEBUI_PORT}:8080"  # qBit WebUI via gluetun
-      #- "${QBITTORRENT_INCOMING_PORT}:${QBITTORRENT_INCOMING_PORT}/tcp"  # incoming peers
-      #- "${QBITTORRENT_INCOMING_PORT}:${QBITTORRENT_INCOMING_PORT}/udp"
+      - "${PROWLARR_WEBUI_PORT}:9696"  # prowlarr WebUI via gluetun
+      - "8191:8191"   # FlareSolverr API
+      - "8000:8000"
   qbittorrent:
     env_file:
       - ../_shared/.env
@@ -42,8 +45,7 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     restart: unless-stopped
-    # Share Gluetun's network stack = kill switch + no leaks
-    network_mode: "service:gluetun"
+    network_mode: "service:gluetun" # routes all traffic through VPN
     depends_on:
       gluetun:
         condition: service_healthy
@@ -52,6 +54,35 @@ services:
     volumes:
       - /srv/config/qbittorrent:/config
       - ${CACHE_ROOT}/downloads:/downloads
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: "service:gluetun"   # routes all traffic through VPN
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    volumes:
+      - /srv/config/prowlarr:/config
+    restart: unless-stopped
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: "service:gluetun"   # keep behind VPN
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+    restart: unless-stopped
+
 networks:
   homelab:
     external: true
