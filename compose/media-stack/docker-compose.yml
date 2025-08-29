@@ -1,38 +1,149 @@
 services:
-  jellyfin:
-    image: lscr.io/linuxserver/jellyfin:10.9.11
-    container_name: jellyfin
-    ports: ["8096:8096"]
-    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}"]
-    volumes:
-      - /srv/config/jellyfin:/config
-      - /srv/media/movies:/media/movies:ro
-      - /srv/media/tv:/media/tv:ro
-    restart: unless-stopped
   sonarr:
-    image: lscr.io/linuxserver/sonarr:4.0.10
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    ports: ["8989:8989"]
-    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}"]
+    environment:
+      - UMASK=002
     volumes:
-      - /srv/config/sonarr:/config
-      - /srv/media/tv:/tv
-      - /srv/cache/downloads/complete:/downloads
+      - ${CONFIG_ROOT}/sonarr:/config
+      - ${MEDIA_ROOT}:/media
+      - ${CACHE_ROOT}/downloads:/downloads
+    ports:
+      - "${SONARR_PORT}:8989"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:8989/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+    networks:
+      homelab:
+        ipv4_address: 172.18.0.10
+      default:
   radarr:
-    image: lscr.io/linuxserver/radarr:5.8.3
+    image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    ports: ["7878:7878"]
-    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}"]
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      - UMASK=002
     volumes:
-      - /srv/config/radarr:/config
-      - /srv/media/movies:/movies
-      - /srv/cache/downloads/complete:/downloads
+      - ${CONFIG_ROOT}/radarr:/config
+      - ${MEDIA_ROOT}:/media
+      - ${CACHE_ROOT}/downloads:/downloads
+    ports:
+      - "${RADARR_PORT}:7878"
+    networks:
+      homelab:
+        ipv4_address: 172.18.0.11
+      default:
     restart: unless-stopped
-  overseerr:
-    image: lscr.io/linuxserver/overseerr:1.33.2
-    container_name: overseerr
-    ports: ["5055:5055"]
-    environment: ["PUID=${PUID}", "PGID=${PGID}", "TZ=${TZ}"]
-    volumes: ["/srv/config/overseerr:/config"]
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:7878/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      - UMASK=002
+    volumes:
+      - ${CONFIG_ROOT}/bazarr:/config
+      - ${MEDIA_ROOT}:/media
+    ports:
+      - "${BAZARR_PORT}:6767"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:6767/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+  jellyfin:
+    image: jellyfin/jellyfin:latest   # start with :latest; we’ll pin to a digest after first pull
+    container_name: jellyfin
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    user: "${PUID}:${PGID}"
+    group_add:
+      - "44" #viedo
+      - "993" #render
+    ports:
+      - "8096:8096"     # HTTP
+      # - "8920:8920"   # HTTPS (enable later if you need)
+    volumes:
+      - ${CONFIG_ROOT}/jellyfin:/config
+      - ${MEDIA_ROOT}:/media:ro              # read-only; Sonarr/Radarr manage writes
+      - ${CACHE_ROOT}/transcodes:/transcode  # fast SSD for transcoding
+    devices:
+      - /dev/dri:/dev/dri   # Intel iGPU (VAAPI) on your X1 Yoga
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8096/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      #- PLEX_CLAIM=
+      - UMASK=002
+      - ADVERTISE_IP=http://192.168.4.90:32400/
+    ports:
+      - "32400:32400"
+    volumes:
+      - ${CONFIG_ROOT}/plex:/config
+      - ${MEDIA_ROOT}:/media:ro
+      - ${CACHE_ROOT}/transcodes:/transcode
+    devices:
+      - /dev/dri:/dev/dri
+    user: "${PUID}:${PGID}"
+    group_add:
+      - "44"  # video
+      - "993" # render
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:32400/identity || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      - LOG_LEVEL=info
+      - PORT=5055
+    user: "${PUID}:${PGID}"
+    volumes:
+      - ${CONFIG_ROOT}/jellyseerr:/app/config
+    ports:
+      - "${OVERSEERR_PORT:-5055}:5055"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5055',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+networks:
+  homelab:
+    external: true
