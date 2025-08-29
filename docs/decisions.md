@@ -214,3 +214,11 @@
   - Fast changes now; reproducibility when digests are pinned.
   - Consistent permissions across containers.
 
+## ADR-022: Switch to NetworkManager on srv-media
+- **Status:** Approved
+- **Context:** Cockpit required NM for networking graphs + PackageKit online state.
+- **Decision:** Use `renderer: NetworkManager` in netplan for `enp0s31f6`. Keep Docker/Tailscale unmanaged in NM.
+- **Consequences:**
+  - Cockpit Networking + Updates pages now fully functional.
+  - Adds NM to stack (slightly more complex).
+  - Rollback documented in runbook.
