@@ -223,3 +223,39 @@
 - **Prowlarr:** `GET /`
 - **FlareSolverr:** `GET /health`
 - **Gluetun:** built-in healthcheck
+
+## Ops Dashboard: Cockpit (srv-media)
+
+- Install:
+  sudo apt install -y cockpit cockpit-packagekit network-manager cockpit-networkmanager \
+                     pcp pcp-zeroconf cockpit-pcp smartmontools nvme-cli lm-sensors
+  sudo systemctl enable --now cockpit.socket pmcd pmlogger pmproxy
+  sudo ufw allow from 192.168.4.0/22 to any port 9090 proto tcp
+  sudo ufw allow in on tailscale0 to any port 9090 proto tcp
+
+- TLS: regenerate with `sscg` if Cockpit certs break.
+
+- Netplan → NetworkManager (DHCP via eero):
+  network:
+    version: 2
+    renderer: NetworkManager
+    ethernets:
+      enp0s31f6:
+        dhcp4: true
+
+  (Docker/Tailscale unmanaged in `/etc/NetworkManager/conf.d/99-unmanaged.conf`)
+
+- Rollback: restore `/etc/netplan.backup.*`, remove NM conf, `systemctl disable --now NetworkManager`.
+
+- Cockpit now shows:
+  - Networking graphs (via NM)
+  - Updates (via PackageKit)
+  - CPU/mem/disk graphs (via PCP)
+  - Drive health (via smartmontools)
+  - Temps (via lm-sensors)
+
+CLI checks:
+  pkcon refresh force
+  pmstat -t 1 -s 5
+  pmiostat -t 1 -s 5
+  sensors
