@@ -23,7 +23,7 @@ services:
       - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c 'wget -O- --retry-connrefused --post-data "json={\"listen_port\":{{PORTS}}}" http://127.0.0.1:8080/api/v2/app/setPreferences 2>&1'
       - HTTP_CONTROL_SERVER=on
       - HTTP_CONTROL_SERVER_ADDRESS=:8000
-
+      - FIREWALL_INPUT_PORTS=8080,9696,8191,8000
     volumes:
       - /srv/config/gluetun:/gluetun
     networks:
@@ -54,6 +54,12 @@ services:
     volumes:
       - /srv/config/qbittorrent:/config
       - ${CACHE_ROOT}/downloads:/downloads
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:8080/api/v2/app/version >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -67,6 +73,12 @@ services:
     volumes:
       - /srv/config/prowlarr:/config
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:9696/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
   flaresolverr:
     image: flaresolverr/flaresolverr:latest
     container_name: flaresolverr
@@ -82,7 +94,12 @@ services:
       - LOG_HTML=${LOG_HTML:-false}
       - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
     restart: unless-stopped
-
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:${FLARESOLVERR_PORT:-8191}/health >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 networks:
   homelab:
     external: true
