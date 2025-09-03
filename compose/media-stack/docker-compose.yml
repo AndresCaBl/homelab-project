@@ -143,7 +143,63 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
-
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    ports:
+      - "3000:3000"
+    networks:
+      - homelab
+      - default
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=192.168.4.90:3000,srv-media:3000,srv-media.home:3000
+    user: "${PUID}:${PGID}"   # ensure read access everywhere
+    volumes:
+      - /srv/config/homepage:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: bind
+        source: /srv
+        target: /srv
+        read_only: true
+        bind:
+          propagation: rshared
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: "1"
+      net.ipv6.conf.default.disable_ipv6: "1"
+      net.ipv6.conf.lo.disable_ipv6: "1"
+    restart: unless-stopped
+## this container is to be accessed only via Tailscale
+  homepage-ts:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage-ts
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    ports:
+      - "3001:3000"
+    networks:
+      - homelab
+      - default
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=100.82.212.3:3001,srv-media:3001,srv-media.home:3001
+    user: "${PUID}:${PGID}"   # ensure read access everywhere
+    volumes:
+      - /srv/config/homepage-ts:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: bind
+        source: /srv
+        target: /srv
+        read_only: true
+        bind:
+          propagation: rshared
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: "1"
+      net.ipv6.conf.default.disable_ipv6: "1"
+      net.ipv6.conf.lo.disable_ipv6: "1"
+    restart: unless-stopped
 networks:
   homelab:
     external: true
