@@ -47,6 +47,31 @@ services:
       interval: 30s
       timeout: 5s
       retries: 10
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    ports:
+      - "8686:8686"
+    env_file:
+      - ../_shared/.env
+      - ./.env
+    environment:
+      - UMASK=002
+    volumes:
+      - /srv/config/lidarr:/config
+      - /srv/media/music:/music  
+      - /srv/cache/downloads:/downloads 
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8686/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+    networks:
+      homelab:
+         ipv4_address: 172.18.0.12
+      default:
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
@@ -102,7 +127,8 @@ services:
     environment:
       #- PLEX_CLAIM=
       - UMASK=002
-      - ADVERTISE_IP=http://192.168.4.90:32400/
+      - ADVERTISE_IP=http://10.10.2.1:32400/,http://srv-media.home.arpa:32400/
+      #-ADVERTISE_IP=http://10.10.2.1:32400/
     ports:
       - "32400:32400"
     volumes:
@@ -155,7 +181,8 @@ services:
       - homelab
       - default
     environment:
-      - HOMEPAGE_ALLOWED_HOSTS=192.168.4.90:3000,srv-media:3000,srv-media.home:3000
+      #- HOMEPAGE_ALLOWED_HOSTS=192.168.4.90:3000,srv-media:3000,srv-media.home.arpa:3000
+      - HOMEPAGE_ALLOWED_HOSTS=http://srv-media.home.arpa:3001,10.10.2.2:3000,srv-media:3000
     user: "${PUID}:${PGID}"   # ensure read access everywhere
     volumes:
       - /srv/config/homepage:/app/config
@@ -184,7 +211,7 @@ services:
       - homelab
       - default
     environment:
-      - HOMEPAGE_ALLOWED_HOSTS=100.82.212.3:3001,srv-media:3001,srv-media.home:3001
+      - HOMEPAGE_ALLOWED_HOSTS=100.82.212.3:3001,srv-media:3001,srv-media.home.arpa:3001
     user: "${PUID}:${PGID}"   # ensure read access everywhere
     volumes:
       - /srv/config/homepage-ts:/app/config
