@@ -1,19 +1,40 @@
 # Home Lab Project
 
-This repository tracks the infrastructure-as-code, configurations, and runbooks for a two-node home lab.
+This repo tracks the configs and runbooks for my home lab. The focus is repeatable builds, clean migrations, and day-to-day ops.
 
 ## Goals
-- Media Server: Automate Plex library management using sonarr/radarr/overseerr
-- Migration-friendly: All data/config under `/srv/*` on hosts
-- Everything-as-Code: Docker Compose, env templates (no secrets)
-- Learning-aligned: Maps to AZ-900/104/204 and CCNA objectives
+
+- Media server: Plex-first with automated library management (Sonarr/Radarr) and requests (Jellyseerr)
+- Migration-friendly: persistent data under `/srv/*`
+- Everything as code: Docker Compose with `.env.example` templates - Practice for IaC automation and deployments.
+- Learning-aligned: practical networking and operations work aligned to AZ-900/AZ-104/AZ-204 and CCNA
+
+## Current environment (summary)
+
+- Domain: `home.arpa`
+- Network: UniFi UXG-Lite with VLANs (see `docs/ipam.md`)
+- DNS: Pi-hole on `srv-network.home.arpa` (Docker)
+- Hosts:
+  - `srv-network` — UniFi Network Application + Pi-hole
+  - `srv-media` — media + automation (Ubuntu Server 24.04.3 LTS)
+
+## Services (srv-media)
+
+- Plex (primary), Jellyfin (secondary)
+- Sonarr, Radarr, Bazarr, Jellyseerr
+- qBittorrent + Prowlarr + FlareSolverr behind Gluetun
 
 ## Structure
-- `docs/` — network plan, decisions, runbooks, diagrams
-- `compose/` — docker-compose projects (media, downloads, monitoring)
-- `config/` — app configs that are safe to version
-- `bin/` — helper scripts (bash)
-- `backup/` — backup scripts and docs (no archives checked in)
 
-## Phases
-See `docs/runbook.md` and `docs/decisions.md`.
+- `docs/` — IPAM, ADRs, runbooks, diagrams
+- `compose/` — docker-compose projects
+- `config/` — version-safe app configs
+- `bin/` — helper scripts
+- `backup/` — backup scripts and notes (no archives committed)
+
+## Docs
+
+- `docs/ipam.md` — VLANs, addressing, hostnames
+- `docs/runbook.md` — build phases and operating notes
+- `docs/decisions.md` — ADR log
+- `docs/quick-ref.md` — service endpoints and common checks
