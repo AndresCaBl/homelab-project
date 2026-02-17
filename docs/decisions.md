@@ -1,224 +1,324 @@
-# Decisions & Rationale (ADR-style summaries)
+```md
+# Architecture Decision Record (ADR) Log — Homelab
 
-# Decisions & Rationale (ADR-style summaries)
+Append-only log of architecturally significant decisions.
+Current addressing and naming: `docs/ipam.md`.
 
-## ADR-000: Hostnames & IP Plan
-- **Context:** Two laptops used as nodes.
-- **Decision:** Use `srv-media` (Ubuntu) and `lab-proxmox` (Proxmox) with reserved IPs in 192.168.4.0/24.
-- **Status:** Approved
-- **Consequences:** Consistent addressing, easy migration.
+---
 
-## ADR-001: Everything under /srv on hosts
-- **Context:** Need a predictable directory layout and migration-friendly storage approach.
-- **Decision:** Use `/srv/{media,downloads,config,compose,bin,backup}` with UUID-based mounts for USB drives.
-- **Status:** Approved
-- **Consequences:** Simplifies backup, restore, and migration processes.
+## Index
 
-## ADR-002: Everything-as-Code via Docker Compose
-- **Context:** Consistency across services and environments.
-- **Decision:** Each stack has its own compose project and `.env.example` committed (no secrets).
-- **Status:** Approved
-- **Consequences:** Simplifies deployment and version control for services.
+| ADR | Title | Status | Date (AEST) | Confidence |
+|---|---|---|---|---|
+| ADR-0001 | Internal DNS domain (`home.arpa`) | Accepted | 2026-02-17 | High |
+| ADR-0002 | Phase 1 network: eero router + flat LAN (`192.168.4.0/22`) | Superseded | 2025-09-12 | High |
+| ADR-0003 | Phase 2 network: UniFi UXG-Lite + VLAN segmentation | Accepted | 2026-02-17 | High |
+| ADR-0004 | DHCP strategy (current: Clients only) | Accepted | 2026-02-17 | High |
+| ADR-0005 | DNS strategy: Pi-hole on `srv-network` | Accepted | 2026-02-17 | Medium |
+| ADR-0006 | Host inventory and roles | Accepted | 2026-02-17 | High |
+| ADR-0007 | `/srv` as the root for persistent data | Accepted | 2025-09-12 | High |
+| ADR-0008 | Everything-as-code with Docker Compose | Accepted | 2025-09-12 | High |
+| ADR-0009 | Repo workflow: WSL for git + scripting | Accepted | 2025-09-12 | High |
+| ADR-0010 | Timezone and container user IDs | Accepted | 2025-09-12 | High |
+| ADR-0011 | Ethernet-first for servers | Accepted | 2025-09-12 | High |
+| ADR-0012 | IPv4-only during early build | Accepted | 2025-09-12 | Medium |
+| ADR-0013 | SSH key-based auth as default | Accepted | 2025-09-12 | High |
+| ADR-0014 | Remote access via Tailscale | Accepted | 2025-09-12 | High |
+| ADR-0015 | Storage layout: USB libraries + SSD cache | Accepted | 2025-09-12 | High |
+| ADR-0016 | Media frontends: Plex primary; Jellyfin secondary | Accepted | 2025-09-12 | High |
+| ADR-0017 | Subtitle handling: import existing; Bazarr fills gaps | Accepted | 2025-09-12 | Medium |
+| ADR-0018 | Seeding strategy: SSD-first, copy-on-import (no hardlinks) | Accepted | 2025-09-12 | High |
+| ADR-0019 | Release selection preferences (custom formats + indexer priorities) | Accepted | 2025-09-12 | Medium |
+| ADR-0020 | Quality size caps (MB/min) | Accepted | 2025-09-12 | Medium |
+| ADR-0021 | Requests app: Jellyseerr | Accepted | 2025-09-12 | High |
+| ADR-0022 | Health checks: simple per-service endpoints | Accepted | 2025-09-12 | Medium |
+| ADR-0023 | Container hygiene: iterate on `:latest`, pin later | Accepted | 2025-09-12 | Medium |
+| ADR-0024 | `srv-media` networking: NetworkManager renderer | Accepted | 2025-09-12 | High |
+| ADR-0025 | Wireless VLANs deferred (current AP limitation) | Accepted | 2026-02-17 | High |
 
-## ADR-003: Repo workflow
-- **Context:** Minimize CR/LF issues and path differences between dev and prod environments.
-- **Decision:** Use WSL for git and scripting to match Linux hosts.
-- **Status:** Approved
-- **Consequences:** Avoids cross-platform compatibility issues.
+---
 
-## ADR-004: Timezone & IDs
-- **Context:** Consistent timekeeping and permissions across containers and hosts.
-- **Decision:** Use `TZ=Australia/Brisbane`, `PUID=1000`, `PGID=1000` for containers.
-- **Status:** Approved
-- **Consequences:** Ensures logs have correct timestamps and files have consistent ownership.
+## ADR-0001: Internal DNS domain (`home.arpa`)
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** High
+- **Context:** Internal hostnames needed a stable namespace that won’t collide with public DNS.
+- **Options considered:** `.home`, `.local`, `home.arpa`
+- **Decision:** Use `home.arpa` for internal DNS.
+- **Consequences:** Local DNS and documentation use `*.home.arpa`.
 
-## ADR-005: IP convention
-- **Context:** Predictable network layout for easier troubleshooting and expansion.
-- **Decision:** Reserve `.90` (srv-media), `.91` (lab-proxmox), `.92` (Pi-hole LXC).
-- **Status:** Approved
-- **Consequences:** Simplifies identification and management of lab devices.
+---
 
-## ADR-006: Disable Wi-Fi for lab hosts
-- **Context:** Consistent addressing and simpler routing.
-- **Decision:** Use Ethernet only (adapters + unmanaged switch).
-- **Status:** Approved
-- **Consequences:** Reduces network complexity and improves stability.
+## ADR-0002: Phase 1 network: eero router + flat LAN (`192.168.4.0/22`)
+- **Status:** Superseded (replaced by ADR-0003)
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Early lab setup prioritized speed and minimal moving parts.
+- **Options considered:** flat LAN behind eero; VLAN segmentation from day one
+- **Decision:** Use a flat LAN behind eero with DHCP reservations for hosts.
+- **Consequences:** Early configs used IP literals and were refactored during cutover.
 
-## ADR-007: IPv4-only for early phases
-- **Context:** Reduce complexity; align with early CCNA study.
-- **Decision:** Disable IPv6 on Eero and hosts.
-- **Status:** Approved
-- **Consequences:** Simpler firewall rules, predictable connectivity; IPv6 to be revisited later.
+---
 
-## ADR-008: DHCP reservations on Eero
-- **Context:** Predictable addressing for `srv-media` & `lab-proxmox`.
-- **Decision:** Reserve 192.168.4.90 and .91 to Ethernet MACs.
-- **Status:** Approved
-- **Consequences:** Ensures consistent IP allocation.
+## ADR-0003: Phase 2 network: UniFi UXG-Lite + VLAN segmentation
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** High
+- **Context:** The lab needed segmentation, predictable addressing, and centralized network management.
+- **Options considered:** keep eero routing; UniFi gateway + managed switching
+- **Decision:** Use UniFi UXG-Lite as gateway/firewall with VLANs defined in `docs/ipam.md`.
+- **Consequences:** Network state is documented by runbooks and IPAM, not ad-hoc device configs.
 
-## ADR-009: OS selection & installation
-- **Context:** Need stable, supported base OS for each host’s role.
+---
+
+## ADR-0004: DHCP strategy (current: Clients only)
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** High
+- **Context:** Infrastructure nodes needed stable addresses; client devices did not.
+- **Options considered:** DHCP on all VLANs; DHCP on Clients only with static/reservations for Infra/Servers
+- **Decision:** DHCP enabled for Clients VLAN only. Infra and Servers use static/reservations.
+- **Consequences:** Server addressing is stable; client churn stays isolated to the Clients VLAN.
+
+---
+
+## ADR-0005: DNS strategy: Pi-hole on `srv-network`
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** Medium
+- **Context:** The lab needed a single DNS resolver with local records for `home.arpa`.
+- **Options considered:** gateway DNS only; Pi-hole as primary DNS
+- **Decision:** Run Pi-hole on `srv-network` and advertise it as DNS for VLANs.
+- **Consequences:** DNS depends on `srv-network`; redundancy requires a second resolver.
+- **Needs confirmation:** Pi-hole IP ownership for `10.10.1.2` (macvlan vs bridge/port mapping). Record the chosen mode when verified.
+
+---
+
+## ADR-0006: Host inventory and roles
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** High
+- **Context:** Reduce operational overhead and clarify service ownership.
+- **Options considered:** dedicated hypervisor node; consolidated infra host + dedicated media host
 - **Decision:**
-  - `srv-media`: Ubuntu Server 22.04.4 LTS (LTS stability, minimal footprint).
-  - `lab-proxmox`: Proxmox VE 8.x (Debian-based hypervisor).
-  - `old-dell`: Ubuntu Desktop 24.04 (temporary migration source).
-- **Status:** Approved
-- **Consequences:** Reliable platforms aligned to each role’s needs.
+  - `srv-network`: UniFi Network Application + Pi-hole (Docker)
+  - `srv-media`: media + automation stacks
+  - `lab-proxmox`: removed
+- **Consequences:** Infra and media responsibilities are explicit and documented by hostname.
 
-## ADR-010: SSH key-based authentication as default
-- **Context:** Secure, repeatable, and automation-friendly access to all lab nodes.
+---
+
+## ADR-0007: `/srv` as the root for persistent data
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Persistent data needed stable paths to support rebuilds and migrations.
+- **Options considered:** distro defaults; standardize under `/srv`
+- **Decision:** Store persistent data under `/srv`.
+- **Consequences:** Path conventions are consistent across services and hosts.
+
+---
+
+## ADR-0008: Everything-as-code with Docker Compose
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Service deployments needed to be repeatable and reviewable.
+- **Options considered:** manual installs; Compose-managed containers
+- **Decision:** Run services as Compose projects; commit `.env.example`; keep secrets out of git.
+- **Consequences:** Changes are tracked and can be rolled back.
+
+---
+
+## ADR-0009: Repo workflow: WSL for git + scripting
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Windows tooling introduced CR/LF and path issues.
+- **Options considered:** native Windows workflow; WSL-first workflow
+- **Decision:** Use WSL for git operations and scripting.
+- **Consequences:** Fewer line-ending and permission mismatches.
+
+---
+
+## ADR-0010: Timezone and container user IDs
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Logs and file ownership needed to align across hosts and containers.
+- **Options considered:** defaults; standard TZ/PUID/PGID
+- **Decision:** Use `TZ=Australia/Brisbane`, `PUID=1000`, `PGID=1000` where supported.
+- **Consequences:** Predictable timestamps and consistent ownership under `/srv`.
+
+---
+
+## ADR-0011: Ethernet-first for servers
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Stable addressing and fewer wireless variables were required for servers.
+- **Options considered:** Wi-Fi; Ethernet
+- **Decision:** Prefer Ethernet for server/infra nodes.
+- **Consequences:** More predictable connectivity and troubleshooting.
+
+---
+
+## ADR-0012: IPv4-only during early build
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Reduce moving parts during buildout.
+- **Options considered:** dual-stack; IPv4-only
+- **Decision:** Operate IPv4-only initially; revisit IPv6 later.
+- **Consequences:** Simpler routing and firewalling while iterating.
+
+---
+
+## ADR-0013: SSH key-based auth as default
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Admin access needed to be secure and consistent across hosts.
+- **Options considered:** password auth; key-based auth with password auth disabled
+- **Decision:** Use a dedicated Ed25519 keypair and disable SSH password authentication after validation.
+- **Consequences:** Consistent login flow and reduced credential exposure.
+
+---
+
+## ADR-0014: Remote access via Tailscale
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Remote access was required without WAN port forwarding.
+- **Options considered:** port forwards; site-to-site VPN; Tailscale
+- **Decision:** Use Tailscale with MagicDNS enabled.
+- **Consequences:** Remote admin remains available across LAN changes.
+
+---
+
+## ADR-0015: Storage layout: USB libraries + SSD cache
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Downloads/seeding needed SSD I/O; libraries needed capacity.
+- **Options considered:** all-on-USB; SSD cache + USB library
 - **Decision:**
-  - Generate single Ed25519 keypair (`homelab_ed25519`) on WSL client.
-  - Deploy public key to all hosts (`srv-media`, `lab-proxmox`, `old-dell`).
-  - Configure `~/.ssh/config` with host aliases.
-  - Enable `ssh-agent` auto-start in WSL to cache keys.
-  - Disable SSH password authentication after key verification.
-- **Status:** Approved
-- **Consequences:** Consistent login experience across lab, improved security, supports automation workflows.
+  - USB library mounts: `/srv/media/movies`, `/srv/media/tv` (UUID mounts, `noatime`)
+  - SSD cache: `/srv/cache/downloads/{incomplete,seeding,watch}`
+  - Config: `/srv/config/<service>`
+  - Compose: `/srv/compose/<stack>`
+  - Backup: `/srv/backup/{configs,db_dumps}`
+- **Consequences:** Churn stays on SSD; library paths remain stable.
 
-## ADR-0011: Remote Access via Tailscale
-- **Status:** Approved
-- **Context:** Secure access to homelab services (Ubuntu server and Proxmox) from anywhere without router port forwarding.
-- **Decision:** Use Tailscale for mesh VPN connectivity. Enable MagicDNS to allow name-based access (`srv-media`, `lab-proxmox`) instead of Tailscale IPs. Exit Node support is optional, not enabled by default.
-- **Consequences:**
-  - Devices remain accessible regardless of LAN IP changes.
-  - Simplified remote management, similar to Azure Bastion/VPN Gateway.
+---
 
-## ADR-0012: Storage Layout & Library Migration
-- **Status:** Approved
-- **Context:** Media libraries from old server needed migration into new, migration-friendly `/srv` structure.
+## ADR-0016: Media frontends: Plex primary; Jellyfin secondary
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Household playback needed broad client support without locking into a single frontend.
+- **Options considered:** Plex only; Jellyfin only; run both
+- **Decision:** Plex is the primary frontend. Jellyfin is deployed and kept available but is not the default.
+- **Consequences:** Operational checks prioritize Plex; Jellyfin remains available for testing/backup or specific clients.
+
+---
+
+## ADR-0017: Subtitle handling: import existing; Bazarr fills gaps
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Many files already had valid subtitles; duplicates caused clutter.
+- **Options considered:** always fetch; import existing + fetch missing only
+- **Decision:** Import existing subtitles via Sonarr/Radarr; Bazarr fetches missing/additional only.
+- **Consequences:** Fewer duplicates and less subtitle churn.
+
+---
+
+## ADR-0018: Seeding strategy: SSD-first, copy-on-import (no hardlinks)
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Seeding performance mattered; USB writes during seeding were undesirable.
+- **Options considered:** hardlinks into library; copy-on-import with SSD seeding
+- **Decision:** Copy on import; hardlinks off; keep torrents seeding from SSD paths.
+- **Consequences:** Stable library paths on USB; sustained seeding performance.
+
+---
+
+## ADR-0019: Release selection preferences (custom formats + indexer priorities)
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Automated selection needed bias toward preferred sources when quality is equivalent.
+- **Options considered:** default ordering only; custom formats + indexer priorities
+- **Decision:** Use custom formats and indexer priorities to bias selection.
+- **Consequences:** More predictable automation; requires periodic tuning.
+
+---
+
+## ADR-0020: Quality size caps (MB/min)
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Avoid oversized encodes while still accepting good WEB releases.
+- **Options considered:** no caps; MB/min caps per tier
 - **Decision:**
-  - Use `/srv/media/movies` and `/srv/media/tv` as mount points for external drives, mounted by UUID with `noatime`.
-  - Migrate existing content via `rsync`.
-  - Normalize permissions (owner: andres, dirs 755, files 644).
-  - Perform initial tidy-up but defer renaming/duplicates handling to Radarr/Sonarr.
-- **Consequences:**
-  - Storage layout is consistent and portable.
-  - Future migrations only require mounting drives at same `/srv` paths.
-  - Old server remains online temporarily as fallback.
+  - Movies (1080p WEB): preferred ~20–22 MB/min; max ~35–36 MB/min
+  - TV (1080p WEB): preferred ~16 MB/min; max ~26 MB/min
+- **Consequences:** Storage stays lean; edge-case releases may be rejected.
 
-  ## ADR-013: Unified /srv Folder Structure with SSD Cache
+---
 
-- **Status:** Approved
-- **Context:**
-  To support migration-friendly and performance-optimized media management, we need a consistent and predictable `/srv` tree.
-  The SSD cache drive handles all torrent activity, while USB HDDs provide long-term storage for movies and TV shows.
-  This ensures fast I/O for downloads/seeding and clean separation of persistent data.
+## ADR-0021: Requests app: Jellyseerr
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Household requests needed a simple workflow tied to existing auth.
+- **Options considered:** Overseerr; Jellyseerr
+- **Decision:** Use Jellyseerr integrated with Jellyfin, Sonarr, and Radarr.
+- **Consequences:** Requests use Jellyfin accounts; the request flow remains separate from Plex.
 
-- **Decision:**
-  - Use `/srv/cache/downloads/{incomplete,seeding,watch}` on the SSD cache drive.
-  - Use `/srv/media/movies` and `/srv/media/tv` on USB drives (mounted by UUID with `noatime`).
-  - Keep service configs under `/srv/config/<service>`.
-  - Keep Compose projects under `/srv/compose/<stack>`.
-  - Keep backups under `/srv/backup/{configs,db_dumps}`.
+---
 
-- **Consequences:**
-  - Docker containers (qBittorrent, Sonarr, Radarr, etc.) will rely on a consistent path layout.
-  - Migration to other hosts (NUC, UnRAID) is simplified by re-using `/srv` layout.
-  - Cache SSD prevents excessive writes on USB HDDs, improving performance and longevity.
+## ADR-0022: Health checks: simple per-service endpoints
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Troubleshooting needed fast, low-noise signals.
+- **Options considered:** none; lightweight HTTP-based checks
+- **Decision:** Use simple per-service endpoints (where available).
+- **Consequences:** Faster triage when containers are unhealthy.
 
-## ADR-014: Media frontends — Jellyfin primary + Plex dual-use
+---
 
-- **Status:** Approved
-- **Context:**
-  Need great local UX with flexibility for devices that prefer Plex.
-- **Decision:**
-  - Run both frontends; Jellyfin is the daily driver, Plex available as secondary.
-  - Share libraries at `/media/movies` and `/media/tv`.
-  - Use SSD cache at `/transcode`; map `/dev/dri` for hardware acceleration.
-- **Consequences:**
-  - Broad client compatibility without sacrificing Jellyfin-first workflow.
-  - Consistent library paths for both servers.
+## ADR-0023: Container hygiene: iterate on `:latest`, pin later
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** Medium
+- **Context:** Early setup required frequent changes.
+- **Options considered:** pin immediately; iterate on `:latest` then pin
+- **Decision:** Use `:latest` during active buildout; pin versions/digests once stable.
+- **Consequences:** Faster iteration; some risk from upstream changes until pinning is complete.
 
-## ADR-015: Subtitles ownership — import included subs; Bazarr fetches missing only
+---
 
-- **Status:** Approved
-- **Context:**
-  Many files already include synced subtitles; avoid duplicate or conflicting subs.
-- **Decision:**
-  - Sonarr/Radarr: `Import Subtitle Files = On`; `Import Extra Files = Off`; renaming On.
-  - Bazarr manages only missing/additional subtitles.
-- **Consequences:**
-  - Preserves embedded, in-sync subs; reduces unnecessary downloads.
-  - Jellyfin/Plex read `.srt` files placed alongside media.
+## ADR-0024: `srv-media` networking: NetworkManager renderer
+- **Status:** Accepted
+- **Date:** 2025-09-12
+- **Confidence:** High
+- **Context:** Cockpit networking and update status required NetworkManager integration.
+- **Options considered:** systemd-networkd; NetworkManager
+- **Decision:** Use `renderer: NetworkManager` for the primary interface; keep Docker/Tailscale unmanaged by NM.
+- **Consequences:** Cockpit networking and update status behave consistently.
 
-## ADR-016: Seeding strategy — Option B (copy on import; hardlinks Off)
+---
 
-- **Status:** Approved
-- **Context:**
-  Keep torrents seeding from SSD while libraries live on USB storage.
-- **Decision:**
-  - Completed Download Handling On; Use hardlinks Off.
-  - Copy from `/downloads` to `/media` during import.
-- **Consequences:**
-  - Sustained seeding performance from SSD.
-  - Clean, stable library paths on long-term storage.
-
-## ADR-017: Release selection — prefer public (YTS) and freeleech when same quality
-
-- **Status:** Approved
-- **Context:**
-  Prefer public indexers (YTS for movies) and freeleech options even if slightly larger within limits.
-- **Decision:**
-  - Custom Formats: `YTS +600` (movies), `Freeleech +250` (movies), `Freeleech +200–300` (TV).
-  - Prowlarr priorities: `YTS = 1`, other public indexers `5–8`, private indexers `≥30`; Full Sync to apps.
-- **Consequences:**
-  - Among same-quality results, YTS/freeleech wins.
-  - Quality order still takes precedence unless profile order is adjusted.
-
-## ADR-018: Quality size caps (MB/min) — movies and TV
-
-- **Status:** Approved
-- **Context:**
-  Keep files lean without penalizing good WEB encodes.
-- **Decision:**
-  - Movies (1080p WEB): Preferred about **20–22 MB/min**, Max about **35–36 MB/min**.
-  - TV (1080p WEB): Preferred about **16 MB/min**, Max about **26 MB/min**.
-  - Other tiers scaled accordingly in Sonarr/Radarr profiles.
-- **Consequences:**
-  - Avoids bloat while allowing slightly larger YTS/freeleech within Max.
-  - Size heuristic aligns with preferences.
-
-## ADR-019: Requests app — Jellyseerr over Overseerr
-
-- **Status:** Approved
-- **Context:**
-  Jellyfin-first household; want simple authentication and UX for family.
-- **Decision:**
-  - Use Jellyseerr; connect to Jellyfin, Sonarr, and Radarr.
-  - Household users authenticate via Jellyfin accounts.
-- **Consequences:**
-  - Seamless request flow; optional auto-approve for household members.
-
-## ADR-020: Healthchecks — simple HTTP endpoints per service
-
-- **Status:** Approved
-- **Context:**
-  Compose needs reliable health signals that don’t flap.
-- **Decision:**
-  - Plex `/identity`; Jellyseerr HTTP `/`; Sonarr/Radarr `/ping`; Bazarr `/`; qBittorrent `/api/v2/app/version`; Prowlarr `/`; FlareSolverr `/health`; Gluetun built-in.
-- **Consequences:**
-  - `docker ps` surfaces unhealthy services quickly.
-  - Faster, clearer troubleshooting.
-
-## ADR-021: Container hygiene — defer pinning; consistent users/groups
-
-- **Status:** Approved
-- **Context:**
-  Rapid iteration during Phase 7 with predictable file ownership.
-- **Decision:**
-  - Keep images on `:latest` during setup; pin digests later.
-  - Map `PUID=1000` and `PGID=1000`; add `video` and `render` groups for Jellyfin/Plex.
-  - Keep configs under `/srv/config/<service>`.
-- **Consequences:**
-  - Fast changes now; reproducibility when digests are pinned.
-  - Consistent permissions across containers.
-
-## ADR-022: Switch to NetworkManager on srv-media
-- **Status:** Approved
-- **Context:** Cockpit required NM for networking graphs + PackageKit online state.
-- **Decision:** Use `renderer: NetworkManager` in netplan for `enp0s31f6`. Keep Docker/Tailscale unmanaged in NM.
-- **Consequences:**
-  - Cockpit Networking + Updates pages now fully functional.
-  - Adds NM to stack (slightly more complex).
-  - Rollback documented in runbook.
+## ADR-0025: Wireless VLANs deferred (current AP limitation)
+- **Status:** Accepted
+- **Date:** 2026-02-17
+- **Confidence:** High
+- **Context:** Guest/IoT VLANs require SSID-to-VLAN mapping; current APs do not support wireless VLANs.
+- **Options considered:** enable partial isolation now; define VLANs and defer wireless segmentation
+- **Decision:** Keep Guest and IoT VLANs defined but unused until AP upgrade.
+- **Consequences:** Wi-Fi remains on Clients VLAN; guest/IoT wireless segmentation is a planned upgrade.
+```
