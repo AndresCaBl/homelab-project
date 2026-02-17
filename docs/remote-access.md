@@ -1,32 +1,52 @@
-# Phase 3 – Early Remote Access
+# Remote Access (Tailscale)
 
-## Objective
-Enable secure remote access to both homelab hosts (`srv-media` and `lab-proxmox`) without relying on router port forwarding.
+## Purpose
+Remote admin access without router port forwarding.
 
-## Tailscale Setup
+## Hosts
+- srv-media
+- srv-network
 
-### 1. Installation (Linux: Ubuntu/Proxmox)
+Removed:
+- lab-proxmox (decommissioned)
 
-    curl -fsSL https://tailscale.com/install.sh | sh
-    sudo systemctl enable --now tailscaled
-    sudo tailscale up
+## Install (Ubuntu)
 
-- Check assigned Tailscale IP:
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable --now tailscaled
+sudo tailscale up
 
-    tailscale ip -4
+Verify:
+tailscale status
+tailscale ip -4
 
-### 2. MagicDNS
+## DNS
 
-Enabled via Tailscale Admin Console → DNS → Enable MagicDNS.
+Tailscale:
+- MagicDNS enabled.
+- Hostnames:
+  - srv-media.tail401c13.ts.net
+  - srv-network.tail401c13.ts.net
 
-Allows access using hostnames instead of IPs:
+LAN:
+- Local DNS uses home.arpa:
+  - srv-media.home.arpa
+  - srv-network.home.arpa
 
-    srv-media.tail401c13.ts.net
+## Access checks
 
-    lab-proxmox.tail401c13.ts.net
+Remote (on Tailscale):
+ping srv-media.tail401c13.ts.net
+ping srv-network.tail401c13.ts.net
+ssh andres@srv-media.tail401c13.ts.net
+ssh andres@srv-network.tail401c13.ts.net
 
+LAN (no VPN):
+ping srv-media.home.arpa
+ping srv-network.home.arpa
+ssh andres@srv-media.home.arpa
+ssh andres@srv-network.home.arpa
 
-    ping srv-media
-    ping lab-proxmox
-
-
+## Notes
+- No WAN port forwards.
+- If subnet routes or exit nodes are enabled later, record the routes and ACLs.
