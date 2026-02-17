@@ -21,7 +21,7 @@
 - `srv-network.home` (controller/infra Tiny), `srv-media.home`, `lab-proxmox.home`
 
 **Key IPs (static/reserved):**
-- **10.10.1.1** `gw-uxg.home` — UXG-Lite LAN
+- **10.10.1.1** `gw-uxg-lite.home` — UXG-Lite LAN
 - **10.10.1.2** `dns-pihole.home` — Pi-hole (on srv-network; prefer macvlan)
 - **10.10.1.3** `sw-flex-5p.home` — USW Flex Mini mgmt
 - **10.10.1.10** `srv-network.home` — Lenovo Tiny (UniFi controller + logging/monitoring)
