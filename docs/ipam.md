@@ -13,12 +13,12 @@
 
 ## Infra (VLAN 1 — 10.10.1.0/24)
 
-**DHCP:** Off (optional pool: `10.10.1.50–199`)
+**DHCP:** pool: `10.10.1.50–199`
 **DNS:** Pi-hole on `srv-network` advertised as DNS for all VLANs
 
 | IP            | Hostname                  | MAC Address | Device / Role                                | Notes |
 |---------------|---------------------------|-------------|----------------------------------------------|-------|
-| **10.10.1.1** | **gw-uxg.home.arpa**      |             | **UniFi UXG-Lite** (gateway Docker on `srv-network`)  | Controller override → `srv-network.home.arpa` |
+| **10.10.1.1** | **gw-uxg.home.arpa**      |             | **UniFi UXG-Lite** (gateway)  | Controller override → `srv-network.home.arpa` |
 | **10.10.1.2** | **dns-pihole.home.arpa**  |             | **Pi-hole** (Docker on `srv-network`)        | Primary DNS |
 | **10.10.1.3** | **sw-flex-5p.home.arpa**  |             | **UniFi USW Flex Mini** (management)         | Static/reservation |
 | **10.10.1.10**| **srv-network.home.arpa** |             | **Infra host** (Docker: UniFi + Pi-hole)     | Static/reservation |
