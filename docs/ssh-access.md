@@ -1,70 +1,78 @@
-# SSH Key & Access Setup
+# SSH Key and Access Setup
 
-## Key Generation (WSL client)
+## Key generation (WSL)
 
-    ssh-keygen -t ed25519 -a 100 -f ~/.ssh/homelab_ed25519 -C "andres@homelab"
+ssh-keygen -t ed25519 -a 100 -f ~/.ssh/homelab_ed25519 -C "andres@homelab"
 
-- Saved to ~/.ssh/homelab_ed25519 (private) and ~/.ssh/homelab_ed25519.pub(public).
+Files:
+- ~/.ssh/homelab_ed25519 (private)
+- ~/.ssh/homelab_ed25519.pub (public)
 
-- Private key is encrypted with a passphrase.
+## Deploy keys
 
-## Deploying Keys to Hosts
+srv-media:
+ssh-copy-id -i ~/.ssh/homelab_ed25519.pub andres@srv-media.home.arpa
 
-    ssh-copy-id -i ~/.ssh/homelab_ed25519.pub andres@srv-media
-    ssh-copy-id -i ~/.ssh/homelab_ed25519.pub andres@lab-proxmox
-    ssh-copy-id -i ~/.ssh/homelab_ed25519.pub andres@old-dell
+srv-network:
+ssh-copy-id -i ~/.ssh/homelab_ed25519.pub andres@srv-network.home.arpa
 
-- Permissions Checklist (server side)
+## Server-side permissions
 
-    chmod 700 ~/.ssh
-    chmod 600 ~/.ssh/authorized_keys
-    chown -R andres:andres ~/.ssh
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+chown -R andres:andres ~/.ssh
 
-## SSH Config (client in WSL)
+## Client SSH config (WSL)
 
-~/.ssh/config:
+File: ~/.ssh/config
 
-    Host srv-media
-        HostName 192.168.4.90
-        User andres
-        IdentityFile ~/.ssh/homelab_ed25519
-        IdentitiesOnly yes
-        AddKeysToAgent yes
+Host srv-media
+    HostName srv-media.home.arpa
+    User andres
+    IdentityFile ~/.ssh/homelab_ed25519
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 
-    Host lab-proxmox
-        HostName 192.168.4.91
-        User andres
-        IdentityFile ~/.ssh/homelab_ed25519
-        IdentitiesOnly yes
-        AddKeysToAgent yes
+Host srv-network
+    HostName srv-network.home.arpa
+    User andres
+    IdentityFile ~/.ssh/homelab_ed25519
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 
-    Host old-dell
-        HostName 192.168.4.92
-        User andres
-        IdentityFile ~/.ssh/homelab_ed25519
-        IdentitiesOnly yes
-        AddKeysToAgent yes
+Host srv-media-ts
+    HostName srv-media.tail401c13.ts.net
+    User andres
+    IdentityFile ~/.ssh/homelab_ed25519
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 
-## Auto-Start ssh-agent in WSL
+Host srv-network-ts
+    HostName srv-network.tail401c13.ts.net
+    User andres
+    IdentityFile ~/.ssh/homelab_ed25519
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 
-- Add to ~/.bashrc:
+## ssh-agent in WSL
+
+Add to ~/.bashrc:
 
 SSH_ENV="$HOME/.ssh/agent-environment"
 
-    start_agent() {
-        echo "Starting ssh-agent..."
-        eval "$(ssh-agent -s)" > /dev/null
-        ssh-add ~/.ssh/homelab_ed25519
-        echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > "$SSH_ENV"
-        echo "export SSH_AGENT_PID=$SSH_AGENT_PID" >> "$SSH_ENV"
-        chmod 600 "$SSH_ENV"
-    }
+start_agent() {
+    eval "$(ssh-agent -s)" > /dev/null
+    ssh-add ~/.ssh/homelab_ed25519
+    echo "export SSH_AUTH_SOCK=$SSH_AUTH_SOCK" > "$SSH_ENV"
+    echo "export SSH_AGENT_PID=$SSH_AGENT_PID" >> "$SSH_ENV"
+    chmod 600 "$SSH_ENV"
+}
 
-    if [ -f "$SSH_ENV" ]; then
-        source "$SSH_ENV" > /dev/null
-        if ! kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
-            start_agent
-        fi
-    else
+if [ -f "$SSH_ENV" ]; then
+    . "$SSH_ENV" > /dev/null
+    if ! kill -0 "$SSH_AGENT_PID" 2>/dev/null; then
         start_agent
     fi
+else
+    start_agent
+fi
